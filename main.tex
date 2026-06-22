@@ -1,0 +1,227 @@
+\documentclass[14pt,a4paper]{extarticle}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{minted}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{hyperref}
+
+\usemintedstyle{vs}
+\setminted{
+    linenos=true,
+    fontsize=\scriptsize,
+    frame=single,
+    framesep=2mm,
+    breaklines=true,
+    breakanywhere=true,
+    tabsize=4,
+    bgcolor=gray!10
+}
+\begin{document}
+\begin{titlepage}
+\begin{center}
+МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ\\
+РОССИЙСКОЙ ФЕДЕРАЦИИ\\
+Федеральное государственное бюджетное образовательное учреждение\\
+высшего образования\\[0.5cm]
+{\Large\bfseries АДЫГЕЙСКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ}\\[0.3cm]
+НОК ``Институт точных наук и цифровых технологий''\\
+Кафедра автоматизированных систем обработки информации и управления\\
+\vfill
+{\Large ОТЧЕТ ПО ПРАКТИЧЕСКОЙ РАБОТЕ}\\[0.5cm]
+{\Large Программная реализация численного метода}\\
+{\Large\itshape Вариант 7. Нахождение определителя матрицы}\\[0.5cm]
+1 курс, группа 1ИВТ2\\
+\vfill
+\begin{flushright}
+\begin{tabular}{l}
+Выполнил: \\
+\hrulefill\ Ю.\,И.\ Цирульник \\
+«\underline{\hspace{1cm}}» \underline{\hspace{2cm}} 2026 г. \\[0.5cm]
+Проверил: \\
+\hrulefill\ \underline{\hspace{6cm}} \\
+«\underline{\hspace{1cm}}» \underline{\hspace{2cm}} 2026 г. \\
+\end{tabular}
+\end{flushright}
+\vfill
+Майкоп, 2026 г.
+\end{center}
+\end{titlepage}
+
+
+\section{Теоретические сведения}
+
+\subsection*{Постановка задачи}
+Необходимо разработать программу для вычисления определителя квадратной матрицы произвольного порядка $n$.
+
+\subsection*{Теория}
+Определителем квадратной матрицы $A = \begin{pmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{pmatrix}$ второго порядка называется число:
+\begin{equation}
+|A| = a_{11}a_{22} - a_{12}a_{21}.
+\label{eq:det2}
+\end{equation}
+
+Определителем $A = \begin{pmatrix} a_{11} & \cdots & a_{1n} \\ \vdots & \ddots & \vdots \\ a_{n1} & \cdots & a_{nn} \end{pmatrix}$ квадратной матрицы порядка $n$, $n \geq 3$, называется число:
+\begin{equation}
+|A| = \sum_{k=1}^{n} (-1)^{k+1} a_{1k} M_k,
+\label{eq:detn}
+\end{equation}
+где $M_k$ --- определитель матрицы порядка $n-1$, полученной из матрицы $A$ вычёркиванием первой строки и столбца с номером $k$ (минор элемента $a_{1k}$).
+
+\section{Ход выполнения работы}
+
+\subsection{Разработка программы}
+Программа реализована на языке Python. Она включает в себя:
+\begin{itemize}
+    \item Модуль ввода данных: Включает функции, которые обеспечивают пошаговый ввод размерности матрицы и её элементов. Реализована проверка корректности вводимых данных (проверка на целое число для размера, на числовой формат элементов и на соответствие количества введенных значений размеру строки).
+    \item Алгоритм вычисления: Используется рекурсивная функция, которая вычисляет определитель методом разложения по первой строке согласно формуле. Для формирования миноров применяется вспомогательная функция.
+    \item Обработка ошибок: Программа обрабатывает прерывание выполнения пользователем (KeyboardInterrupt) и перехватывает непредвиденные исключения, обеспечивая стабильную работу приложения.
+\end{itemize}
+
+\subsection{Исходный код}
+Ниже представлен исходный код программы \texttt{main.py}:
+
+\begin{minted}[caption={Исходный код программы вычисления определителя}]{python}
+def read_matrix_size():
+    while True:
+        try:
+            n = int(input("Введите порядок квадратной матрицы (N): "))
+            if n > 0:
+                return n
+            print("Ошибка: размерность должна быть положительным числом.")
+        except ValueError:
+            print("Ошибка: введите целое число.")
+
+
+def read_matrix_row(size, row_index):
+    while True:
+        try:
+            row = list(map(float, input(f"Строка {row_index}: ").split()))
+            if len(row) != size:
+                print(f"Ошибка: ожидается {size} чисел, введено {len(row)}.")
+                continue
+            return row
+        except ValueError:
+            print("Ошибка: допустимы только числа.")
+
+
+def build_square_matrix(n):
+    print(f"Введите элементы матрицы {n}x{n} (числа через пробел):")
+    return [read_matrix_row(n, i + 1) for i in range(n)]
+
+
+def get_submatrix(matrix, remove_row, remove_col):
+    return [
+        [value for col_idx, value in enumerate(row) if col_idx != remove_col]
+        for row_idx, row in enumerate(matrix) if row_idx != remove_row
+    ]
+
+
+def calculate_determinant(matrix):
+    n = len(matrix)
+
+    if n == 1:
+        return matrix[0][0]
+    if n == 2:
+        return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]
+
+    det_value = 0
+    for col_idx in range(n):
+        sign = 1 if col_idx % 2 == 0 else -1
+        element = matrix[0][col_idx]
+        minor = get_submatrix(matrix, 0, col_idx)
+
+        det_value += sign * element * calculate_determinant(minor)
+
+    return det_value
+
+def format_result(value):
+    return int(value) if value.is_integer() else value
+
+def main():
+    try:
+        size = read_matrix_size()
+        matrix = build_square_matrix(size)
+
+        result = calculate_determinant(matrix)
+        print(f"Определитель равен: {format_result(result)}")
+
+    except KeyboardInterrupt:
+        print("Программа прервана пользователем.")
+    except Exception as e:
+        print(f"Неожиданная ошибка: {e}")
+
+if __name__ == "__main__":
+    main()
+\end{minted}
+
+\section{Результаты работы}
+
+В данном разделе приведены примеры работы программы для матриц различной размерности.
+
+\begin{figure}[H]
+\centering
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{matrix_2x2.png}
+    \caption{Результат выполнения матрицы 2х2.}
+    \label{fig:placeholder}
+\end{figure}
+\label{fig:res2}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{matrix_3x3.png}
+    \caption{Результат выполнения матрицы 3х3.}
+    \label{fig:placeholder}
+\end{figure}
+\label{fig:res3}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{matrix_4x4.png}
+    \caption{Результат выполнения матрицы 4х4.}
+    \label{fig:placeholder}
+\end{figure}
+\label{fig:res4}
+\end{figure}
+
+Как видно из рисунков 1-3, программа корректно вычисляет определитель для матриц различных порядков и обрабатывает некорректный ввод пользователя, что соответствует требованиям задания.
+
+\section{Выводы}
+В ходе работы была реализована программа на языке Python для нахождения определителя матрицы. Использовался метод разложения по первой строке. Реализован контроль вводимых данных, что повышает универсальность программы.
+
+\clearpage
+
+\begin{thebibliography}{9}
+
+\bibitem{ilin}
+Ильин В.А., Позняк Э.Г. Линейная алгебра. --- 3-е изд., перераб. и доп. --- Москва: Наука, 1984. --- 296 с.
+
+\bibitem{strang}
+Стрэнг Г. Линейная алгебра и её приложения. --- Санкт-Петербург: Лань, 2013. --- 464 с.
+
+\bibitem{python_doc}
+Документация языка Python 3.12. \url{https://docs.python.org/3/} (дата обращения: 20.05.2024).
+
+\bibitem{svetlova}
+Светлова Е.Н. Python. Быстрый старт. --- Москва: ДМК Пресс, 2018. --- 272 с.
+
+\end{thebibliography}
+
+\end{document}
